@@ -1,5 +1,6 @@
 import { useState } from "react";
-import '../styles/RegistroForm.css'; // Ruta correcta desde /components hacia /styles
+import '../styles/RegistroForm.css';
+import supabase from "../lib/supabase";
 
 interface FormData {
   nombres: string;
@@ -8,6 +9,7 @@ interface FormData {
   celular: string;
   facebook: string;
   correo: string;
+  es_nuevo: boolean;
 }
 
 export default function RegistroForm() {
@@ -18,21 +20,47 @@ export default function RegistroForm() {
     celular: "",
     facebook: "",
     correo: "",
+    es_nuevo: true,
   });
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = event.target;
-    setFormData(prevData => ({ 
-      ...prevData, 
-      [name]: value
+    const { name, value, type } = event.target;
+
+    setFormData(prevData => ({
+      ...prevData,
+      [name]: name === "es_nuevo"
+        ? value === "true"
+        : value
     }));
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    console.log("Datos registrados:", formData);
-    alert("¡Registro enviado con éxito!");
-    // Aquí después conectaremos Supabase o base de datos
+
+    try {
+      const { error } = await supabase
+        .from("asistentes")
+        .insert([formData]);
+
+      if (error) {
+        console.error("Error al registrar:", error.message);
+        alert("Error al registrar. Revisa los datos.");
+      } else {
+        alert("¡Registro enviado con éxito!");
+        setFormData({
+          nombres: "",
+          apellidos: "",
+          perfil: "universitario",
+          celular: "",
+          facebook: "",
+          correo: "",
+          es_nuevo: true,
+        });
+      }
+    } catch (err) {
+      console.error("Error inesperado:", err);
+      alert("Error inesperado. Inténtalo de nuevo.");
+    }
   };
 
   return (
@@ -71,7 +99,6 @@ export default function RegistroForm() {
                 value="universitario"
                 checked={formData.perfil === "universitario"}
                 onChange={handleChange}
-                required
               />
               Universitario
             </label>
@@ -117,6 +144,32 @@ export default function RegistroForm() {
             value={formData.correo}
             onChange={handleChange}
           />
+        </div>
+
+        <div className="registro-group">
+          <label>¿Es nuevo?</label>
+          <div className="registro-radios">
+            <label className="radio-option">
+              <input
+                type="radio"
+                name="es_nuevo"
+                value="true"
+                checked={formData.es_nuevo === true}
+                onChange={handleChange}
+              />
+              Sí
+            </label>
+            <label className="radio-option">
+              <input
+                type="radio"
+                name="es_nuevo"
+                value="false"
+                checked={formData.es_nuevo === false}
+                onChange={handleChange}
+              />
+              No
+            </label>
+          </div>
         </div>
 
         <button type="submit" className="registro-button">Registrar</button>
