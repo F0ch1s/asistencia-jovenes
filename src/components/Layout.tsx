@@ -10,7 +10,6 @@ const Layout = () => {
             justifyContent: "center"
         }}>
             <div style={{ padding: "2rem", fontFamily: "Arial, sans-serif" }}>
-                <h1>Registro de Asistencia</h1>
                 <Outlet />
             </div>
         </main>

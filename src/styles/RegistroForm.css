@@ -1,0 +1,103 @@
+.registro-container {
+  background-color: white;
+  max-width: 500px;
+  margin: 40px auto;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
+}
+
+.registro-title {
+  text-align: center;
+  font-size: 3rem;
+  margin-bottom: 20px;
+  color: #222;
+  font-weight: 800; /* más negrita */
+}
+
+
+.registro-group {
+  margin-bottom: 15px;
+}
+
+.registro-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.registro-group input[type="text"],
+.registro-group input[type="email"],
+.registro-group input[type="tel"] {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #aaa;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+/* RADIOS mejorados */
+.registro-radios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-top: 6px;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.radio-option input[type="radio"] {
+  accent-color: #007bff;
+  width: 18px;
+  height: 18px;
+}
+
+.radio-option:hover {
+  color: #007bff;
+}
+
+.registro-button {
+  background-color: #007bff;
+  color: white;
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  width: 100%;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.registro-button:hover {
+  background-color: #0056b3;
+}
+
+/* RESPONSIVO */
+@media (max-width: 600px) {
+  .registro-container {
+    padding: 20px;
+    margin: 20px;
+  }
+
+  .registro-title {
+    font-size: 1.5rem;
+  }
+
+  .registro-radios {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .registro-button {
+    font-size: 0.95rem;
+    padding: 10px;
+  }
+}

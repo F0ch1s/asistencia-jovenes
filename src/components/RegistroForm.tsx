@@ -1,9 +1,10 @@
 import { useState } from "react";
+import '../styles/RegistroForm.css'; // Ruta correcta desde /components hacia /styles
 
 interface FormData {
   nombres: string;
   apellidos: string;
-  perfil: 'universitario' | 'profesional'
+  perfil: 'universitario' | 'profesional';
   celular: string;
   facebook: string;
   correo: string;
@@ -18,10 +19,6 @@ export default function RegistroForm() {
     facebook: "",
     correo: "",
   });
-
-  const validate = () => {
-    //TODO: validar cada campo antes de enviar
-  }
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -39,27 +36,91 @@ export default function RegistroForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <label>Nombres:</label><br />
-      <input name="nombres" value={formData.nombres} onChange={handleChange} required /><br /><br />
+    <div className="registro-container">
+      <h2 className="registro-title">Registro de Asistencia</h2>
+      <form onSubmit={handleSubmit}>
+        <div className="registro-group">
+          <label>Nombres:</label>
+          <input
+            type="text"
+            name="nombres"
+            value={formData.nombres}
+            onChange={handleChange}
+            required
+          />
+        </div>
 
-      <label>Apellidos:</label><br />
-      <input name="apellidos" value={formData.apellidos} onChange={handleChange} required /><br /><br />
+        <div className="registro-group">
+          <label>Apellidos:</label>
+          <input
+            type="text"
+            name="apellidos"
+            value={formData.apellidos}
+            onChange={handleChange}
+            required
+          />
+        </div>
 
-      <label>¿Eres?</label><br />
-      <label><input type="radio" name="perfil" value="universitario" onChange={handleChange} required /> Universitario</label><br />
-      <label><input type="radio" name="perfil" value="profesional" onChange={handleChange} /> Profesional</label><br /><br />
+        <div className="registro-group">
+          <label>¿Eres?</label>
+          <div className="registro-radios">
+            <label className="radio-option">
+              <input
+                type="radio"
+                name="perfil"
+                value="universitario"
+                checked={formData.perfil === "universitario"}
+                onChange={handleChange}
+                required
+              />
+              Universitario
+            </label>
+            <label className="radio-option">
+              <input
+                type="radio"
+                name="perfil"
+                value="profesional"
+                checked={formData.perfil === "profesional"}
+                onChange={handleChange}
+              />
+              Profesional
+            </label>
+          </div>
+        </div>
 
-      <label>Celular:</label><br />
-      <input name="celular" value={formData.celular} onChange={handleChange} required /><br /><br />
+        <div className="registro-group">
+          <label>Celular:</label>
+          <input
+            type="tel"
+            name="celular"
+            value={formData.celular}
+            onChange={handleChange}
+            required
+          />
+        </div>
 
-      <label>Facebook:</label><br />
-      <input name="facebook" value={formData.facebook} onChange={handleChange} /><br /><br />
+        <div className="registro-group">
+          <label>Facebook:</label>
+          <input
+            type="text"
+            name="facebook"
+            value={formData.facebook}
+            onChange={handleChange}
+          />
+        </div>
 
-      <label>Correo electrónico:</label><br />
-      <input type="email" name="correo" value={formData.correo} onChange={handleChange} /><br /><br />
+        <div className="registro-group">
+          <label>Correo electrónico:</label>
+          <input
+            type="email"
+            name="correo"
+            value={formData.correo}
+            onChange={handleChange}
+          />
+        </div>
 
-      <button type="submit">Registrar</button>
-    </form>
+        <button type="submit" className="registro-button">Registrar</button>
+      </form>
+    </div>
   );
 }
