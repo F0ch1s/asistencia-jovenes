@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
-import { supabase } from '../../lib/supabaseClient';
+import supabase from '../lib/supabase';
+import { useNavigate } from 'react-router-dom'
 
-interface LoginFormProps {
-  cambiarPantalla: (pantalla: 'login' | 'registro' | 'main') => void;
-}
 
-const LoginForm: React.FC<LoginFormProps> = ({ cambiarPantalla }) => {
+const LoginForm: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
 
     const { data: loginData, error } = await supabase.auth.signInWithPassword({
       email,
@@ -23,30 +23,35 @@ const LoginForm: React.FC<LoginFormProps> = ({ cambiarPantalla }) => {
       return;
     }
 
+    const userId = loginData.user.id;
+
     // ✅ Usuario autenticado, ahora buscamos su rol en la tabla "encargados"
     const { data: rolData, error: rolError } = await supabase
       .from('encargados')
       .select('rol')
-      .eq('correo', email)
+      .eq('id', userId)
       .single();
 
     if (rolError || !rolData) {
       setErrorMsg('No se pudo obtener el rol del usuario.');
+      console.log(rolError);
       return;
     }
 
-    const rol = rolData.rol;
+    const rol = rolData.rol
+    localStorage.setItem('userRole', rol);
 
-    alert(`✅ Inicio de sesión exitoso como ${rol}`);
-    console.log('Usuario:', loginData.user);
-
-    // 🔁 Redirigir según el rol
-    if (rol === 'encargado') {
-      cambiarPantalla('registro');
-    } else if (rol === 'administrador') {
-      cambiarPantalla('main');
-    } else {
-      setErrorMsg('Rol no reconocido.');
+    switch (rol) {
+      case 'administrador':
+        console.log('admin');
+        navigate('/admin');
+        break;
+      case 'encargado':
+        navigate('/register');
+        break;
+      default:
+        console.log('no');
+        navigate('/');
     }
   };
 
@@ -66,7 +71,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ cambiarPantalla }) => {
       }}
     >
       <h2 style={{ textAlign: 'center', marginBottom: '1rem' }}>
-        Bienvenido, ingresa tus credenciales 🔐
+        Bienvenido, ingresa tus credenciales
       </h2>
 
       {errorMsg && (
