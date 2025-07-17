@@ -24,23 +24,62 @@ export default function RegistroForm() {
   });
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type } = event.target;
+    const { name, value } = event.target;
 
     setFormData(prevData => ({
       ...prevData,
-      [name]: name === "es_nuevo"
-        ? value === "true"
-        : value
+      [name]: name === "es_nuevo" ? value === "true" : value
     }));
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
+    // Limpiar campos
+    const nombres = formData.nombres.trim();
+    const apellidos = formData.apellidos.trim();
+    const celular = formData.celular.trim();
+    const facebook = formData.facebook.trim();
+    const correo = formData.correo.trim();
+
+    // Validaciones
+    if (!nombres || nombres.length < 2) {
+      alert("Ingrese un nombre válido (mínimo 2 letras).");
+      return;
+    }
+
+    if (!apellidos || apellidos.length < 2) {
+      alert("Ingrese un apellido válido (mínimo 2 letras).");
+      return;
+    }
+
+    if (!/^\d{9}$/.test(celular)) {
+      alert("El número de celular debe tener exactamente 9 dígitos.");
+      return;
+    }
+
+    if (correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
+      alert("Ingrese un correo electrónico válido.");
+      return;
+    }
+
+    if (facebook && facebook.length < 3) {
+      alert("El campo Facebook debe tener al menos 3 caracteres si se completa.");
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from("asistentes")
-        .insert([formData]);
+        .insert([{
+          nombres,
+          apellidos,
+          perfil: formData.perfil,
+          celular,
+          facebook,
+          correo,
+          es_nuevo: formData.es_nuevo
+        }]);
 
       if (error) {
         console.error("Error al registrar:", error.message);
