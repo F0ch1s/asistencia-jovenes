@@ -5,6 +5,7 @@ import AdminPage from "./pages/AdminPage";
 import MainPage from "./pages/MainPage";
 import Layout from "./components/Layout";
 import LoginForm from "./components/LoginForm";
+import RecordsPage from "./components/RecordsPage";
 
 function App() {
   const { role, loading } = useUserRole();
@@ -34,6 +35,15 @@ function App() {
               </PrivateRoute>
             }
           />
+          <Route
+            path="/records"
+            element={
+              <PrivateRoute allowedRoles={['administrador']} loading={loading}>
+                <RecordsPage />
+              </PrivateRoute>
+            }
+          />
+
         </Route>
       </Routes>
     </BrowserRouter>
