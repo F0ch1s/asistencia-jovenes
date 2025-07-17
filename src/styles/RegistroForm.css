@@ -13,9 +13,8 @@
   font-size: 3rem;
   margin-bottom: 20px;
   color: #222;
-  font-weight: 800; /* más negrita */
+  font-weight: 800;
 }
-
 
 .registro-group {
   margin-bottom: 15px;
@@ -37,7 +36,6 @@
   box-sizing: border-box;
 }
 
-/* RADIOS mejorados */
 .registro-radios {
   display: flex;
   flex-wrap: wrap;
@@ -80,15 +78,35 @@
   background-color: #0056b3;
 }
 
+/* LOGO */
+.registro-logo {
+  width: 220px;
+  height: auto;
+  margin: 0 auto 1rem;
+  display: block;
+  max-width: 90%;
+}
+
 /* RESPONSIVO */
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   .registro-container {
-    padding: 20px;
-    margin: 20px;
+    padding: 25px;
+    margin: 30px 15px;
   }
 
   .registro-title {
-    font-size: 1.5rem;
+    font-size: 2.2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .registro-container {
+    padding: 20px;
+    margin: 20px 10px;
+  }
+
+  .registro-title {
+    font-size: 1.6rem;
   }
 
   .registro-radios {
@@ -99,5 +117,9 @@
   .registro-button {
     font-size: 0.95rem;
     padding: 10px;
+  }
+
+  .registro-logo {
+    width: 180px;
   }
 }

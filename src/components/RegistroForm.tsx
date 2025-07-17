@@ -1,6 +1,7 @@
 import { useState } from "react";
 import '../styles/RegistroForm.css';
 import supabase from "../lib/supabase";
+import logo from '../assets/jovenes-logo.png';
 
 interface FormData {
   nombres: string;
@@ -104,7 +105,11 @@ export default function RegistroForm() {
 
   return (
     <div className="registro-container">
+      {/* Logo superior */}
+      <img src={logo} alt="Logo" className="registro-logo" />
+
       <h2 className="registro-title">Registro de Asistencia</h2>
+
       <form onSubmit={handleSubmit}>
         <div className="registro-group">
           <label>Nombres:</label>
