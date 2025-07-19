@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import supabase from '../lib/supabase';
-import { useNavigate } from 'react-router-dom'
-
+import logo from '../assets/jovenes-logo.png';
+import '../styles/LoginForm.css';
 
 const LoginForm: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -11,7 +12,6 @@ const LoginForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
 
     const { data: loginData, error } = await supabase.auth.signInWithPassword({
       email,
@@ -25,7 +25,6 @@ const LoginForm: React.FC = () => {
 
     const userId = loginData.user.id;
 
-    // ✅ Usuario autenticado, ahora buscamos su rol en la tabla "encargados"
     const { data: rolData, error: rolError } = await supabase
       .from('encargados')
       .select('rol')
@@ -34,98 +33,56 @@ const LoginForm: React.FC = () => {
 
     if (rolError || !rolData) {
       setErrorMsg('No se pudo obtener el rol del usuario.');
-      console.log(rolError);
+      console.error(rolError);
       return;
     }
 
-    const rol = rolData.rol
+    const rol = rolData.rol;
     localStorage.setItem('userRole', rol);
 
     switch (rol) {
       case 'administrador':
-        console.log('admin');
         navigate('/admin');
         break;
       case 'encargado':
         navigate('/register');
         break;
       default:
-        console.log('no');
         navigate('/');
     }
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      style={{
-        maxWidth: 400,
-        margin: '2rem auto',
-        padding: '2rem',
-        borderRadius: 8,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-        background: '#fff',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1rem',
-      }}
-    >
-      <h2 style={{ textAlign: 'center', marginBottom: '1rem' }}>
-        Bienvenido, ingresa tus credenciales
+    <form className="login-container" onSubmit={handleSubmit}>
+      <img src={logo} alt="Logo Jóvenes" className="login-logo" />
+
+      <h2 className="login-title">
+        Bienvenido, ingresa tus credenciales 🔐
       </h2>
 
-      {errorMsg && (
-        <div style={{ color: 'red', fontWeight: 'bold' }}>
-          {errorMsg}
-        </div>
-      )}
+      {errorMsg && <div className="login-error">{errorMsg}</div>}
 
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        Correo Electrónico
+      <div className="login-group">
+        <label>Correo Electrónico</label>
         <input
           type="email"
           value={email}
           onChange={e => setEmail(e.target.value)}
           required
-          style={{
-            padding: '0.5rem',
-            borderRadius: 4,
-            border: '1px solid #ccc',
-            fontSize: '1rem',
-          }}
         />
-      </label>
+      </div>
 
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        Contraseña
+      <div className="login-group">
+        <label>Contraseña</label>
         <input
           type="password"
           value={password}
           onChange={e => setPassword(e.target.value)}
           required
-          style={{
-            padding: '0.5rem',
-            borderRadius: 4,
-            border: '1px solid #ccc',
-            fontSize: '1rem',
-          }}
         />
-      </label>
+      </div>
 
-      <button
-        type="submit"
-        style={{
-          padding: '0.75rem',
-          borderRadius: 4,
-          border: 'none',
-          background: '#2563eb',
-          color: '#fff',
-          fontWeight: 600,
-          fontSize: '1rem',
-          cursor: 'pointer',
-          marginTop: '1rem',
-        }}
-      >
+      <button type="submit" className="login-button">
         Iniciar Sesión
       </button>
     </form>
