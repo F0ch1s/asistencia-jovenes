@@ -1,16 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "../styles/RegistroForm.css";
 import supabase from "../lib/supabase";
 import logo from "../assets/jovenes-logo.png";
-
-// Toast
 import { toast } from "react-toastify";
 import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 
 interface FormData {
   nombres: string;
   apellidos: string;
-  perfil: "universitario" | "profesional";
+  edad: number;
+  tipo_persona: "pre-adolescente" | "adolescente" | "joven";
+  perfil: "universitario" | "profesional" | "";
   celular: string;
   facebook: string;
   correo: string;
@@ -21,16 +22,50 @@ export default function RegistroForm() {
   const [formData, setFormData] = useState<FormData>({
     nombres: "",
     apellidos: "",
-    perfil: "universitario",
+    edad: 0,
+    tipo_persona: "pre-adolescente",
+    perfil: "",
     celular: "",
     facebook: "",
     correo: "",
     es_nuevo: true,
   });
 
+  const [encargadoId, setEncargadoId] = useState<string | null>(null);
+  const [encargadoNombre, setEncargadoNombre] = useState<string>("");
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchEncargado = async () => {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) return;
+
+      const { data, error } = await supabase
+        .from("encargados")
+        .select("id, nombres")
+        .eq("correo", user.email)
+        .single();
+
+      if (!error && data) {
+        setEncargadoId(data.id);
+        setEncargadoNombre(data.nombres);
+      }
+    };
+
+    fetchEncargado();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
+  };
+
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
-
     setFormData((prevData) => ({
       ...prevData,
       [name]: name === "es_nuevo" ? value === "true" : value,
@@ -39,51 +74,31 @@ export default function RegistroForm() {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (!encargadoId) return showError("No se pudo identificar al encargado.");
 
-    const nombres = formData.nombres.trim();
-    const apellidos = formData.apellidos.trim();
-    const celular = formData.celular.trim();
-    const facebook = formData.facebook.trim();
-    const correo = formData.correo.trim();
+    const { nombres, apellidos, edad, tipo_persona, perfil, celular, facebook, correo, es_nuevo } = formData;
 
-    // Validaciones
-    if (!nombres || nombres.length < 2) {
-      showError("Ingrese un nombre válido (mínimo 2 letras).");
-      return;
-    }
-
-    if (!apellidos || apellidos.length < 2) {
-      showError("Ingrese un apellido válido (mínimo 2 letras).");
-      return;
-    }
-
-    if (!/^\d{9}$/.test(celular)) {
-      showError("El número de celular debe tener exactamente 9 dígitos.");
-      return;
-    }
-
-    if (correo && correo !== "No tiene" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
-      showError("Ingrese un correo electrónico válido.");
-      return;
-    }
-
-
-    if (facebook && facebook !== "No tiene" && facebook.length < 3) {
-      showError("El campo Facebook debe tener al menos 3 caracteres.");
-      return;
-    }
-
+    if (!nombres.trim() || nombres.length < 2) return showError("Ingrese un nombre válido (mínimo 2 letras).");
+    if (!apellidos.trim() || apellidos.length < 2) return showError("Ingrese un apellido válido (mínimo 2 letras).");
+    if (edad <= 0 || isNaN(edad)) return showError("Ingrese una edad válida.");
+    if (tipo_persona === "joven" && perfil === "") return showError("Seleccione si es universitario o profesional.");
+    if (!/^\d{9}$/.test(celular.trim())) return showError("El número de celular debe tener 9 dígitos.");
+    if (correo && correo !== "No tiene" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) return showError("Correo no válido.");
+    if (facebook && facebook !== "No tiene" && facebook.length < 3) return showError("Facebook debe tener al menos 3 caracteres.");
 
     try {
       const { error } = await supabase.from("asistentes").insert([
         {
-          nombres,
-          apellidos,
-          perfil: formData.perfil,
-          celular,
-          facebook,
-          correo,
-          es_nuevo: formData.es_nuevo,
+          nombres: nombres.trim(),
+          apellidos: apellidos.trim(),
+          edad,
+          tipo_persona,
+          perfil: tipo_persona === "joven" ? perfil : null,
+          celular: celular.trim(),
+          facebook: facebook.trim(),
+          correo: correo.trim(),
+          es_nuevo,
+          registrado_por: encargadoId,
         },
       ]);
 
@@ -95,7 +110,9 @@ export default function RegistroForm() {
         setFormData({
           nombres: "",
           apellidos: "",
-          perfil: "universitario",
+          edad: 0,
+          tipo_persona: "pre-adolescente",
+          perfil: "",
           celular: "",
           facebook: "",
           correo: "",
@@ -117,12 +134,12 @@ export default function RegistroForm() {
         background: "#ffffff",
         color: "#000000",
         border: "1px solid #ddd",
-        fontSize: "1.25rem",         // 🔠 Texto más grande
-        padding: "20px",             // 📦 Espaciado interno mayor
+        fontSize: "1.25rem",
+        padding: "20px",
         borderRadius: "14px",
         textAlign: "center",
         width: "95%",
-        maxWidth: "500px",           // 📏 Límite máximo más ancho
+        maxWidth: "500px",
         margin: "0 auto",
         boxShadow: "0 6px 16px rgba(0, 0, 0, 0.1)",
       },
@@ -148,8 +165,16 @@ export default function RegistroForm() {
 
   return (
     <div className="registro-container">
-      <img src={logo} alt="Logo" className="registro-logo" />
-      <h2 className="registro-title">Registro de Asistencia</h2>
+      <button className="logout-button" onClick={handleLogout}>Cerrar sesión</button>
+      <div className="registro-header">
+        <img src={logo} alt="Logo" className="registro-logo" />
+        {encargadoNombre && (
+          <p className="encargado-saludo">
+            <span role="img" aria-label="saludo">👋</span> <strong>{encargadoNombre}</strong>
+          </p>
+        )}
+        <h2 className="registro-title">Registro de Asistencia</h2>
+      </div>
 
       <form onSubmit={handleSubmit}>
         <div className="registro-group">
@@ -175,30 +200,80 @@ export default function RegistroForm() {
         </div>
 
         <div className="registro-group">
-          <label>¿Eres?</label>
+          <label>Edad:</label>
+          <input
+            type="number"
+            name="edad"
+            value={formData.edad}
+            onChange={handleChange}
+            min={1}
+            required
+          />
+        </div>
+
+        <div className="registro-group">
+          <label>¿En qué etapa estás?</label>
           <div className="registro-radios">
-            <label className="radio-option">
+            <label>
               <input
                 type="radio"
-                name="perfil"
-                value="universitario"
-                checked={formData.perfil === "universitario"}
+                name="tipo_persona"
+                value="pre-adolescente"
+                checked={formData.tipo_persona === "pre-adolescente"}
                 onChange={handleChange}
               />
-              Universitario
+              Pre-adolescente
             </label>
-            <label className="radio-option">
+            <label>
               <input
                 type="radio"
-                name="perfil"
-                value="profesional"
-                checked={formData.perfil === "profesional"}
+                name="tipo_persona"
+                value="adolescente"
+                checked={formData.tipo_persona === "adolescente"}
                 onChange={handleChange}
               />
-              Profesional
+              Adolescente
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="tipo_persona"
+                value="joven"
+                checked={formData.tipo_persona === "joven"}
+                onChange={handleChange}
+              />
+              Joven
             </label>
           </div>
         </div>
+
+        {formData.tipo_persona === "joven" && (
+          <div className="registro-group">
+            <label>¿Eres?</label>
+            <div className="registro-radios">
+              <label className="radio-option">
+                <input
+                  type="radio"
+                  name="perfil"
+                  value="universitario"
+                  checked={formData.perfil === "universitario"}
+                  onChange={handleChange}
+                />
+                Universitario
+              </label>
+              <label className="radio-option">
+                <input
+                  type="radio"
+                  name="perfil"
+                  value="profesional"
+                  checked={formData.perfil === "profesional"}
+                  onChange={handleChange}
+                />
+                Profesional
+              </label>
+            </div>
+          </div>
+        )}
 
         <div className="registro-group">
           <label>Celular:</label>
@@ -237,7 +312,6 @@ export default function RegistroForm() {
           </div>
         </div>
 
-
         <div className="registro-group">
           <label>Correo electrónico:</label>
           <div style={{ display: "flex", gap: "10px" }}>
@@ -263,7 +337,6 @@ export default function RegistroForm() {
             </button>
           </div>
         </div>
-
 
         <div className="registro-group">
           <label>¿Es nuevo?</label>

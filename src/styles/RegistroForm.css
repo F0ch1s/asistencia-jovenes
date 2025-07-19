@@ -15,6 +15,35 @@
   color: #222;
   font-weight: 800;
 }
+.encargado-saludo {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 10px 0 0;
+  font-size: 1.1rem;
+  color: #f71515;
+  font-weight: 500;
+}
+
+.logout-button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background-color: #e74c3c;
+  color: rgb(0, 0, 0);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.95rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  transition: background-color 0.2s ease;
+}
+
+.logout-button:hover {
+  background-color: #c0392b;
+}
 
 .registro-group {
   margin-bottom: 15px;
@@ -28,7 +57,8 @@
 
 .registro-group input[type="text"],
 .registro-group input[type="email"],
-.registro-group input[type="tel"] {
+.registro-group input[type="tel"],
+.registro-group input[type="number"] {
   width: 100%;
   padding: 10px;
   border: 1px solid #aaa;
@@ -98,6 +128,24 @@
 
 .transparent-btn:hover {
   background-color: rgba(0, 0, 0, 0.1);
+}
+.logout-btn {
+  display: block;
+  margin: 0 auto 20px;
+  padding: 6px 12px;
+  font-size: 0.95rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: transparent;
+  color: #444;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.logout-btn:hover {
+  background-color: #f8d7da;
+  color: #b00020;
+  border-color: #f5c2c2;
 }
 
 

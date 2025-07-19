@@ -9,7 +9,7 @@ const Layout = () => {
             alignItems: "center",
             justifyContent: "center"
         }}>
-            <div style={{ padding: "2rem", fontFamily: "Arial, sans-serif" }}>
+            <div style={{ padding: "0.5rem", fontFamily: "Arial, sans-serif" }}>
                 <Outlet />
             </div>
         </main>
