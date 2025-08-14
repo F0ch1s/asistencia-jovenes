@@ -5,10 +5,11 @@ import AdminPage from "./pages/AdminPage";
 import MainPage from "./pages/MainPage";
 import Layout from "./components/Layout";
 import LoginForm from "./components/LoginForm";
-import RecordsPage from "./components/RecordsPage";
+import RecordsPage from "./pages/RecordsPage";
 
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import EventsPage from "./pages/EventsPage";
 
 function App() {
   const { role, loading } = useUserRole();
@@ -37,6 +38,14 @@ function App() {
             }
           />
           <Route
+            path="/events"
+            element={
+              <PrivateRoute allowedRoles={["administrador"]} loading={loading}>
+                <EventsPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
             path="/records"
             element={
               <PrivateRoute allowedRoles={["administrador"]} loading={loading}>
@@ -47,7 +56,6 @@ function App() {
         </Route>
       </Routes>
 
-      {/* Aquí va el contenedor de las notificaciones */}
       <ToastContainer />
     </BrowserRouter>
   );

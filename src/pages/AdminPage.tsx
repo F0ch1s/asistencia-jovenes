@@ -8,7 +8,8 @@ const AdminPage = () => {
     <div className="admin-container">
       <h1 className="admin-title">Panel de administración</h1>
       <div className="admin-buttons">
-        <button onClick={() => navigate('/register')}>Registrar nuevo</button>
+        <button onClick={() => navigate('/register')}>Registrar nuevo asistente</button>
+        <button onClick={() => navigate('/events')}>Registrar nuevo evento</button>
         <button onClick={() => navigate('/records')}>Visualizar registros</button>
       </div>
     </div>
