@@ -14,7 +14,12 @@ import EventsPage from "./pages/EventsPage";
 function App() {
   const { role, loading } = useUserRole();
 
-  if (loading) return <p>Cargando...</p>;
+  if (loading) return (
+    <div className="loading-container">
+      <div className="loader" />
+      <p style={{ marginTop: '1rem' }}>Cargando...</p>
+    </div>
+  )
 
   return (
     <BrowserRouter>
@@ -24,7 +29,7 @@ function App() {
           <Route
             path="/admin"
             element={
-              <PrivateRoute allowedRoles={["administrador"]} loading={loading}>
+              <PrivateRoute allowedRoles={["administrador"]} >
                 <AdminPage />
               </PrivateRoute>
             }
@@ -32,7 +37,7 @@ function App() {
           <Route
             path="/register"
             element={
-              <PrivateRoute allowedRoles={["administrador", "encargado"]} loading={loading}>
+              <PrivateRoute allowedRoles={["administrador", "encargado"]}>
                 <MainPage />
               </PrivateRoute>
             }
@@ -40,7 +45,7 @@ function App() {
           <Route
             path="/events"
             element={
-              <PrivateRoute allowedRoles={["administrador"]} loading={loading}>
+              <PrivateRoute allowedRoles={["administrador"]}>
                 <EventsPage />
               </PrivateRoute>
             }
@@ -48,7 +53,7 @@ function App() {
           <Route
             path="/records"
             element={
-              <PrivateRoute allowedRoles={["administrador"]} loading={loading}>
+              <PrivateRoute allowedRoles={["administrador"]}>
                 <RecordsPage />
               </PrivateRoute>
             }
