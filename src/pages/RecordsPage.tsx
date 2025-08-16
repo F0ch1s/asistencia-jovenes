@@ -11,6 +11,8 @@ interface Asistente {
   id: number;
   nombres: string;
   apellidos: string;
+  edad: number;
+  perfil: string;
 }
 
 const RecordsPage = () => {
@@ -43,9 +45,11 @@ const RecordsPage = () => {
         asistentes (
           id,
           nombres,
-          apellidos
-          )
-          )
+          apellidos,
+          edad,
+          perfil
+        )
+      )
           `)
           .eq("id", eventoId)
           .single();
@@ -68,6 +72,17 @@ const RecordsPage = () => {
     }
   }
 
+  const agruparPorEdad = (asistentes: Asistente[]) => {
+    console.log(asistentes);
+    const asistentesAgrupado = {
+      preAdolescentes: asistentes.filter(a => a.edad >= 11 && a.edad <= 13),
+      adolescentes: asistentes.filter(a => a.edad >= 14 && a.edad <= 17),
+      jovenes: asistentes.filter(a => a.edad >= 18 && a.edad <= 25 && a.perfil === "universitario"),
+      jovenes_pro: asistentes.filter(a => a.edad >= 18 && a.edad <= 25 && a.perfil === "profesional")
+    };
+    return asistentesAgrupado;
+  };
+
   useEffect(() => {
     fetchEventos()
   }, []);
@@ -89,19 +104,61 @@ const RecordsPage = () => {
             {/* Acordeón: solo se abre si el evento coincide */}
             {eventoSeleccionado === item.id && (
               <div className="accordion-content">
-                <h3>Asistentes:</h3>
-                {asistentes.length > 0 ? (
-                  <ul>
-                    {asistentes.map((a) => (
-                      <li key={a.id}>
-                        {a.nombres} {a.apellidos}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p>No hay asistentes registrados</p>
-                )}
-              </div>
+              <h3>Asistentes:</h3>
+              {asistentes.length > 0 ? (
+                <>
+                  {(() => {
+                    const grupos = agruparPorEdad(asistentes);
+                    return (
+                      <>
+                        {grupos.preAdolescentes.length > 0 && (
+                          <>
+                            <h4 style={{ color: "green" }}>Pre adolescentes (11–13)</h4>
+                            <ul>
+                              {grupos.preAdolescentes.map(a => (
+                                <li key={a.id}>{a.nombres} {a.apellidos} ({a.edad} años)</li>
+                              ))}
+                            </ul>
+                          </>
+                        )}
+                        {grupos.adolescentes.length > 0 && (
+                          <>
+                            <h4 style={{ color: "purple" }}>Adolescentes (14–17)</h4>
+                            <ul>
+                              {grupos.adolescentes.map(a => (
+                                <li key={a.id}>{a.nombres} {a.apellidos} ({a.edad} años)</li>
+                              ))}
+                            </ul>
+                          </>
+                        )}
+                        {grupos.jovenes.length > 0 && (
+                          <>
+                            <h4 style={{ color: "red" }}>Jóvenes (18–25)</h4>
+                            <ul>
+                              {grupos.jovenes.map(a => (
+                                <li key={a.id}>{a.nombres} {a.apellidos} ({a.edad} años)</li>
+                              ))}
+                            </ul>
+                          </>
+                        )}
+                        {grupos.jovenes_pro.length > 0 && (
+                          <>
+                            <h4 style={{ color: "gold" }}>Jóvenes Profesionales (18–25)</h4>
+                            <ul>
+                              {grupos.jovenes_pro.map(a => (
+                                <li key={a.id}>{a.nombres} {a.apellidos} ({a.edad} años)</li>
+                              ))}
+                            </ul>
+                          </>
+                        )}
+                      </>
+                    );
+                  })()}
+                </>
+              ) : (
+                <p>No hay asistentes registrados</p>
+              )}
+            </div>
             )}
           </div>
         ))}
