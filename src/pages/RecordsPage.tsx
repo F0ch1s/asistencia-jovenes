@@ -140,7 +140,6 @@ const RecordsPage = () => {
                                       {g.preAdolescentes.map(a => (
                                         <li key={a.id} className="person">
                                           {a.nombres} {a.apellidos}
-                                          <small> ({a.edad} años)</small>
                                         </li>
                                       ))}
                                     </ul>
@@ -156,7 +155,6 @@ const RecordsPage = () => {
                                       {g.adolescentes.map(a => (
                                         <li key={a.id} className="person">
                                           {a.nombres} {a.apellidos}
-                                          <small> ({a.edad} años)</small>
                                         </li>
                                       ))}
                                     </ul>
@@ -172,7 +170,6 @@ const RecordsPage = () => {
                                       {g.jovenes.map(a => (
                                         <li key={a.id} className="person">
                                           {a.nombres} {a.apellidos}
-                                          <small> ({a.edad} años)</small>
                                         </li>
                                       ))}
                                     </ul>
@@ -188,7 +185,6 @@ const RecordsPage = () => {
                                       {g.jovenes_pro.map(a => (
                                         <li key={a.id} className="person">
                                           {a.nombres} {a.apellidos}
-                                          <small> ({a.edad} años)</small>
                                         </li>
                                       ))}
                                     </ul>
