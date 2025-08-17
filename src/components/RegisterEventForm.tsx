@@ -1,73 +1,109 @@
 import { useState } from "react";
 import supabase from "../lib/supabase";
+import "../styles/RegisterEventForm.css";
 
-interface FormData {
-    name: string;
-    date: string;
+interface FormState {
+  name: string;
+  date: string; // formato YYYY-MM-DD desde <input type="date">
 }
 
+type Msg = { type: "ok" | "err" | null; text: string };
 
 const RegisterEventForm = () => {
-const [formData, setFormData] = useState<FormData>({
-        name: "",
-        date: "",
-    })
+  const [formData, setFormData] = useState<FormState>({ name: "", date: "" });
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState<Msg>({ type: null, text: "" });
 
-    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = event.target;
-        setFormData((prevData) => ({
-            ...prevData,
-            [name]: value,
-        }));
-    };
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((p) => ({ ...p, [name]: value }));
+  };
 
-    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        const formData = new FormData(event.currentTarget);
-        const nombre = formData.get("name") as string;
-        const fecha = formData.get("date");
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setMsg({ type: null, text: "" });
 
-        try {
-            const { error } = await supabase.from('eventos').insert([
-                {
-                    nombre: nombre?.trim(),
-                    fecha
-                }
-            ])
-
-            if (error) console.error("Error al registrar: ", error)
-            else console.log("Registro exitoso");
-        } catch (err) {
-            console.error("Error: ", err);
-        }
+    const nombre = formData.name.trim();
+    if (!nombre) {
+      setMsg({ type: "err", text: "El nombre del evento es obligatorio." });
+      return;
+    }
+    if (!formData.date) {
+      setMsg({ type: "err", text: "Selecciona una fecha válida." });
+      return;
     }
 
-    return <>
-        <div>
-            <h1>Nuevo Evento</h1>
-            <form onSubmit={handleSubmit}>
-                <label htmlFor="name">Nombre: </label>
-                <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                />
-                <label htmlFor="date">Fecha:</label>
-                <input
-                    type="date"
-                    id="date"
-                    name="date"
-                    value={formData.date}
-                    onChange={handleChange}
-                    required
-                />
-                <button className="registro-button" type="submit">Registrar</button>
-            </form>
-        </div>
-    </>
-}
+    try {
+      setLoading(true);
+      const { error } = await supabase.from("eventos").insert([
+        {
+          nombre,           // columna en tu tabla
+          fecha: formData.date, // asegúrate que la columna sea date/text compatible
+        },
+      ]);
 
-export default RegisterEventForm
+      if (error) {
+        console.error("Supabase error:", error);
+        setMsg({ type: "err", text: "No se pudo registrar el evento." });
+      } else {
+        setMsg({ type: "ok", text: "✅ Evento registrado correctamente." });
+        setFormData({ name: "", date: "" }); // limpiar formulario
+      }
+    } catch (err) {
+      console.error(err);
+      setMsg({ type: "err", text: "Ocurrió un error inesperado." });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="register-form-container">
+      <div className="register-form-card">
+        <h1>📅 Nuevo Evento</h1>
+
+        {msg.type && (
+          <div className={`form-alert ${msg.type === "ok" ? "ok" : "err"}`}>
+            {msg.text}
+          </div>
+        )}
+
+        <form className="events-form" onSubmit={handleSubmit} noValidate>
+          <div className="form-group">
+            <label htmlFor="name">Nombre del evento</label>
+            <input
+              id="name"
+              name="name"
+              type="text"
+              placeholder="Ej: Reunión de jóvenes"
+              value={formData.name}
+              onChange={handleChange}
+              required
+              disabled={loading}
+              autoComplete="off"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="date">Fecha</label>
+            <input
+              id="date"
+              name="date"
+              type="date"
+              value={formData.date}
+              onChange={handleChange}
+              required
+              disabled={loading}
+            />
+          </div>
+
+          <button className="submit-btn" type="submit" disabled={loading}>
+            {loading ? "Registrando..." : "Registrar"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default RegisterEventForm;
