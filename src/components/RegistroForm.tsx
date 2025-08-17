@@ -5,6 +5,7 @@ import supabase from "../lib/supabase";
 import logo from "../assets/jovenes-logo.png";
 import { toast } from "react-toastify";
 import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import Select from 'react-select'
 
 interface FormData {
   nombres: string;
@@ -18,11 +19,22 @@ interface FormData {
   es_nuevo: boolean;
 }
 
+interface Evento {
+  id: number;
+  nombre: string;
+}
+
+interface Asistente {
+  id: number;
+  nombres: string;
+  apellidos: string;
+}
+
 export default function RegistroForm() {
   const [formData, setFormData] = useState<FormData>({
     nombres: "",
     apellidos: "",
-    edad: 0,
+    edad: 1,
     tipo_persona: "pre-adolescente",
     perfil: "",
     celular: "",
@@ -33,7 +45,39 @@ export default function RegistroForm() {
 
   const [encargadoId, setEncargadoId] = useState<string | null>(null);
   const [encargadoNombre, setEncargadoNombre] = useState<string>("");
+
+  const [eventOptions, setEventOptions] = useState<{ value: number; label: string }[]>([]);
+  const [eventSelected, setEventSelected] = useState<{ value: number; label: string } | null>(null);
+  const [asistOptions, setAsistOptions] = useState<{ value: number; label: string }[]>([]);
+  const [asistSelected, setAsistSelected] = useState<{ value: number; label: string } | null>(null);
+
   const navigate = useNavigate();
+
+  const fetchEventos = async () => {
+    const { data, error } = await supabase
+      .from("eventos")
+      .select("id, nombre")
+
+    if (!error && data) {
+      setEventOptions(data.map((e: Evento) => ({
+        value: e.id,
+        label: `${e.nombre}`
+      })));
+    };
+  }
+
+  const fetchAsistentes = async () => {
+    const { data, error } = await supabase
+    .from("asistentes")
+    .select("id, nombres, apellidos")
+
+    if (!error && data) {
+      setAsistOptions(data.map((a: Asistente) => ({
+        value: a.id,
+        label: `${a.apellidos}, ${a.nombres}`
+      })));
+    };
+  }
 
   useEffect(() => {
     const fetchEncargado = async () => {
@@ -57,7 +101,28 @@ export default function RegistroForm() {
     };
 
     fetchEncargado();
+    fetchEventos();
+    fetchAsistentes();
   }, []);
+
+  const registerAsistencia = async (asistenteId: number) => {
+    if (!eventSelected) return showError("Seleccione un evento");
+    let asistente_id = asistenteId === -1 ? asistSelected?.value : asistenteId
+
+    const { error } = await supabase
+    .from("evento_asistentes")
+    .insert([
+      {
+        evento_id: eventSelected?.value,
+        asistente_id
+      }
+    ]);
+
+    if (!error) {
+      showSuccess("¡Registro enviado con éxito!");
+      setAsistSelected(null);
+    }
+  }
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -78,16 +143,22 @@ export default function RegistroForm() {
 
     const { nombres, apellidos, edad, tipo_persona, perfil, celular, facebook, correo, es_nuevo } = formData;
 
+    if (!es_nuevo) {
+      registerAsistencia(-1);
+      return;
+    }
+
+    if (!eventSelected) return showError("Seleccione evento")
     if (!nombres.trim() || nombres.length < 2) return showError("Ingrese un nombre válido (mínimo 2 letras).");
     if (!apellidos.trim() || apellidos.length < 2) return showError("Ingrese un apellido válido (mínimo 2 letras).");
     if (edad <= 0 || isNaN(edad)) return showError("Ingrese una edad válida.");
     if (tipo_persona === "joven" && perfil === "") return showError("Seleccione si es universitario o profesional.");
-    if (!/^\d{9}$/.test(celular.trim())) return showError("El número de celular debe tener 9 dígitos.");
+    if (celular && celular !== "No tiene" && !/^\d{9}$/.test(celular.trim())) return showError("El número de celular debe tener 9 dígitos.");
     if (correo && correo !== "No tiene" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) return showError("Correo no válido.");
     if (facebook && facebook !== "No tiene" && facebook.length < 3) return showError("Facebook debe tener al menos 3 caracteres.");
 
     try {
-      const { error } = await supabase.from("asistentes").insert([
+      const { data, error } = await supabase.from("asistentes").insert([
         {
           nombres: nombres.trim(),
           apellidos: apellidos.trim(),
@@ -100,17 +171,18 @@ export default function RegistroForm() {
           es_nuevo,
           registrado_por: encargadoId,
         },
-      ]);
+      ])
+      .select().single();
 
       if (error) {
         console.error("Error al registrar:", error.message);
         showError("Error al registrar. Revisa los datos.");
       } else {
-        showSuccess("¡Registro enviado con éxito!");
+        registerAsistencia(data.id);
         setFormData({
           nombres: "",
           apellidos: "",
-          edad: 0,
+          edad: 1,
           tipo_persona: "pre-adolescente",
           perfil: "",
           celular: "",
@@ -176,7 +248,56 @@ export default function RegistroForm() {
         <h2 className="registro-title">Registro de Asistencia</h2>
       </div>
 
+      <div className="registro-group">
+        <label>Evento:</label>
+        <Select
+          options={eventOptions}
+          value={eventSelected}
+          onChange={(val) => setEventSelected(val)}
+          placeholder="Seleccione evento"
+          isClearable
+        />
+      </div>
+
       <form onSubmit={handleSubmit}>
+
+        <div className="registro-group" style={{ justifySelf: "center" }}>
+          <label>¿Es nuevo?</label>
+          <div className="registro-radios">
+            <label className="radio-option">
+              <input
+                type="radio"
+                name="es_nuevo"
+                value="true"
+                checked={formData.es_nuevo === true}
+                onChange={handleChange}
+              />
+              Sí
+            </label>
+            <label className="radio-option">
+              <input
+                type="radio"
+                name="es_nuevo"
+                value="false"
+                checked={formData.es_nuevo === false}
+                onChange={handleChange}
+              />
+              No
+            </label>
+          </div>
+        </div>
+
+        {formData.es_nuevo
+        ? null
+        : <Select
+            options={asistOptions}
+            value={asistSelected}
+            onChange={(val) => setAsistSelected(val)}
+            placeholder="Buscar asistente..."
+            isClearable
+          />
+        }
+
         <div className="registro-group">
           <label>Nombres:</label>
           <input
@@ -184,7 +305,7 @@ export default function RegistroForm() {
             name="nombres"
             value={formData.nombres}
             onChange={handleChange}
-            required
+            required={asistSelected === null}
           />
         </div>
 
@@ -195,7 +316,7 @@ export default function RegistroForm() {
             name="apellidos"
             value={formData.apellidos}
             onChange={handleChange}
-            required
+            required={asistSelected === null}
           />
         </div>
 
@@ -207,7 +328,7 @@ export default function RegistroForm() {
             value={formData.edad}
             onChange={handleChange}
             min={1}
-            required
+            required={asistSelected === null}
           />
         </div>
 
@@ -282,7 +403,7 @@ export default function RegistroForm() {
             name="celular"
             value={formData.celular}
             onChange={handleChange}
-            required
+            required={asistSelected === null}
           />
         </div>
 
@@ -335,32 +456,6 @@ export default function RegistroForm() {
             >
               {formData.correo === "No tiene" ? "Cancelar" : "No tiene"}
             </button>
-          </div>
-        </div>
-
-        <div className="registro-group">
-          <label>¿Es nuevo?</label>
-          <div className="registro-radios">
-            <label className="radio-option">
-              <input
-                type="radio"
-                name="es_nuevo"
-                value="true"
-                checked={formData.es_nuevo === true}
-                onChange={handleChange}
-              />
-              Sí
-            </label>
-            <label className="radio-option">
-              <input
-                type="radio"
-                name="es_nuevo"
-                value="false"
-                checked={formData.es_nuevo === false}
-                onChange={handleChange}
-              />
-              No
-            </label>
           </div>
         </div>
 
