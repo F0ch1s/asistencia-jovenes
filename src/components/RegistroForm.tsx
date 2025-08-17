@@ -26,7 +26,7 @@ interface Asistente { id: number; nombres: string; apellidos: string; }
 const getTipoPersonaFromEdad = (edad: number) => {
   if (edad >= 11 && edad <= 13) return "pre-adolescente" as const;
   if (edad >= 14 && edad <= 17) return "adolescente" as const;
-  if (edad >= 18 && edad <= 25) return "joven" as const;
+  if (edad >= 18 && edad <= 50) return "joven" as const;
   return "pre-adolescente" as const; // default
 };
 
@@ -358,7 +358,7 @@ export default function RegistroForm() {
           </div>
         </div>
 
-        {/* Solo si es joven (18–25) pedimos perfil */}
+        {/* Solo si es joven (18–50) pedimos perfil */}
         {formData.tipo_persona === "joven" && (
           <div className="registro-group">
             <label>¿Eres?</label>

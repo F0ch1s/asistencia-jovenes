@@ -179,7 +179,7 @@ const RecordsPage = () => {
                                 {g.jovenes_pro.length > 0 && (
                                   <section className="group">
                                     <h4 style={{ color: "gold" }}>
-                                      Jóvenes Profesionales (18–25)
+                                      Jóvenes Profesionales (18–50)
                                     </h4>
                                     <ul>
                                       {g.jovenes_pro.map(a => (
