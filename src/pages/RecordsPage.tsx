@@ -74,8 +74,8 @@ const RecordsPage = () => {
   const agruparPorEdad = (items: Asistente[]) => {
     const preAdolescentes = items.filter(a => a.edad >= 11 && a.edad <= 13);
     const adolescentes   = items.filter(a => a.edad >= 14 && a.edad <= 17);
-    const jovenes        = items.filter(a => a.edad >= 18 && a.edad <= 25 && a.perfil === "universitario");
-    const jovenes_pro    = items.filter(a => a.edad >= 18 && a.edad <= 25 && a.perfil === "profesional");
+    const jovenes        = items.filter(a => a.edad >= 18 && a.edad <= 50 && a.perfil === "universitario");
+    const jovenes_pro    = items.filter(a => a.edad >= 18 && a.edad <= 50 && a.perfil === "profesional");
     return { preAdolescentes, adolescentes, jovenes, jovenes_pro };
   };
 
