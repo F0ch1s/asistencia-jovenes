@@ -5,12 +5,12 @@ import supabase from "../lib/supabase";
 import logo from "../assets/jovenes-logo.png";
 import { toast } from "react-toastify";
 import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
-import Select from 'react-select'
+import Select from "react-select";
 
 interface FormData {
   nombres: string;
   apellidos: string;
-  edad: number;
+  edad: number; // siempre guardamos número
   tipo_persona: "pre-adolescente" | "adolescente" | "joven";
   perfil: "universitario" | "profesional" | "";
   celular: string;
@@ -19,23 +19,23 @@ interface FormData {
   es_nuevo: boolean;
 }
 
-interface Evento {
-  id: number;
-  nombre: string;
-}
+interface Evento { id: number; nombre: string; }
+interface Asistente { id: number; nombres: string; apellidos: string; }
 
-interface Asistente {
-  id: number;
-  nombres: string;
-  apellidos: string;
-}
+/** Categorización por edad */
+const getTipoPersonaFromEdad = (edad: number) => {
+  if (edad >= 11 && edad <= 13) return "pre-adolescente" as const;
+  if (edad >= 14 && edad <= 17) return "adolescente" as const;
+  if (edad >= 18 && edad <= 25) return "joven" as const;
+  return "pre-adolescente" as const; // default
+};
 
 export default function RegistroForm() {
   const [formData, setFormData] = useState<FormData>({
     nombres: "",
     apellidos: "",
     edad: 1,
-    tipo_persona: "pre-adolescente",
+    tipo_persona: getTipoPersonaFromEdad(1),
     perfil: "",
     celular: "",
     facebook: "",
@@ -54,52 +54,27 @@ export default function RegistroForm() {
   const navigate = useNavigate();
 
   const fetchEventos = async () => {
-    const { data, error } = await supabase
-      .from("eventos")
-      .select("id, nombre")
-
+    const { data, error } = await supabase.from("eventos").select("id, nombre");
     if (!error && data) {
-      setEventOptions(data.map((e: Evento) => ({
-        value: e.id,
-        label: `${e.nombre}`
-      })));
-    };
-  }
+      setEventOptions(data.map((e: Evento) => ({ value: e.id, label: e.nombre })));
+    }
+  };
 
   const fetchAsistentes = async () => {
-    const { data, error } = await supabase
-    .from("asistentes")
-    .select("id, nombres, apellidos")
-
+    const { data, error } = await supabase.from("asistentes").select("id, nombres, apellidos");
     if (!error && data) {
-      setAsistOptions(data.map((a: Asistente) => ({
-        value: a.id,
-        label: `${a.apellidos}, ${a.nombres}`
-      })));
-    };
-  }
+      setAsistOptions(data.map((a: Asistente) => ({ value: a.id, label: `${a.apellidos}, ${a.nombres}` })));
+    }
+  };
 
   useEffect(() => {
     const fetchEncargado = async () => {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) return;
-
       const { data, error } = await supabase
-        .from("encargados")
-        .select("id, nombres")
-        .eq("correo", user.email)
-        .single();
-
-      if (!error && data) {
-        setEncargadoId(data.id);
-        setEncargadoNombre(data.nombres);
-      }
+        .from("encargados").select("id, nombres").eq("correo", user.email).single();
+      if (!error && data) { setEncargadoId(data.id); setEncargadoNombre(data.nombres); }
     };
-
     fetchEncargado();
     fetchEventos();
     fetchAsistentes();
@@ -107,72 +82,96 @@ export default function RegistroForm() {
 
   const registerAsistencia = async (asistenteId: number) => {
     if (!eventSelected) return showError("Seleccione un evento");
-    let asistente_id = asistenteId === -1 ? asistSelected?.value : asistenteId
-
-    const { error } = await supabase
-    .from("evento_asistentes")
-    .insert([
-      {
-        evento_id: eventSelected?.value,
-        asistente_id
-      }
-    ]);
-
-    if (!error) {
-      showSuccess("¡Registro enviado con éxito!");
-      setAsistSelected(null);
-    }
-  }
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/");
+    const asistente_id = asistenteId === -1 ? asistSelected?.value : asistenteId;
+    const { error } = await supabase.from("evento_asistentes").insert([{ evento_id: eventSelected?.value, asistente_id }]);
+    if (!error) { showSuccess("¡Registro enviado con éxito!"); setAsistSelected(null); }
   };
 
+  const handleLogout = async () => { await supabase.auth.signOut(); navigate("/"); };
+
+  /** Alterna entre "" y "No tiene" */
+  const toggleNoTiene = (field: "celular" | "facebook" | "correo") => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: prev[field] === "No tiene" ? "" : "No tiene",
+    }));
+  };
+
+  /** Sanea entradas y recalcula tipo_persona cuando cambia la edad */
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: name === "es_nuevo" ? value === "true" : value,
-    }));
+
+    setFormData(prev => {
+      if (name === "edad") {
+        // Solo dígitos, sin ceros a la izquierda, máx 2 dígitos (99)
+        const digitsOnly = value.replace(/\D/g, "");
+        const noLeadingZeros = digitsOnly.replace(/^0+(?=\d)/, "");
+        const limited = noLeadingZeros.slice(0, 2);
+        const edadNum = limited === "" ? 0 : parseInt(limited, 10);
+        const tipo = getTipoPersonaFromEdad(edadNum);
+        return {
+          ...prev,
+          edad: edadNum,
+          tipo_persona: tipo,
+          perfil: tipo === "joven" ? prev.perfil : "", // limpia perfil si deja de ser joven
+        };
+      }
+
+      if (name === "celular") {
+        // Acepta solo dígitos, limita a 9
+        const digits = value.replace(/\D/g, "").slice(0, 9);
+        return { ...prev, celular: digits };
+      }
+
+      if (name === "es_nuevo") return { ...prev, es_nuevo: value === "true" };
+
+      return { ...prev, [name]: value };
+    });
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!encargadoId) return showError("No se pudo identificar al encargado.");
 
-    const { nombres, apellidos, edad, tipo_persona, perfil, celular, facebook, correo, es_nuevo } = formData;
+    const { nombres, apellidos, edad, perfil, celular, facebook, correo, es_nuevo } = formData;
 
-    if (asistSelected) {
-      registerAsistencia(-1);
-      return;
-    }
+    if (asistSelected) { registerAsistencia(-1); return; }
 
-    if (!eventSelected) return showError("Seleccione evento")
+    if (!eventSelected) return showError("Seleccione evento");
     if (!nombres.trim() || nombres.length < 2) return showError("Ingrese un nombre válido (mínimo 2 letras).");
     if (!apellidos.trim() || apellidos.length < 2) return showError("Ingrese un apellido válido (mínimo 2 letras).");
     if (edad <= 0 || isNaN(edad)) return showError("Ingrese una edad válida.");
-    if (tipo_persona === "joven" && perfil === "") return showError("Seleccione si es universitario o profesional.");
-    if (celular && celular !== "No tiene" && !/^\d{9}$/.test(celular.trim())) return showError("El número de celular debe tener 9 dígitos.");
-    if (correo && correo !== "No tiene" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) return showError("Correo no válido.");
-    if (facebook && facebook !== "No tiene" && facebook.length < 3) return showError("Facebook debe tener al menos 3 caracteres.");
+
+    const tipoCalculado = getTipoPersonaFromEdad(edad);
+    if (tipoCalculado === "joven" && !perfil) return showError("Seleccione si es universitario o profesional.");
+
+    // ✅ Validación de celular (solo si NO es "No tiene")
+    if (celular && celular !== "No tiene" && !/^\d{9}$/.test(celular))
+      return showError("El número de celular debe tener 9 dígitos.");
+
+    if (correo && correo !== "No tiene" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo))
+      return showError("Correo no válido.");
+
+    if (facebook && facebook !== "No tiene" && facebook.length < 3)
+      return showError("Facebook debe tener al menos 3 caracteres.");
 
     try {
-      const { data, error } = await supabase.from("asistentes").insert([
-        {
+      const { data, error } = await supabase
+        .from("asistentes")
+        .insert([{
           nombres: nombres.trim(),
           apellidos: apellidos.trim(),
           edad,
-          tipo_persona,
-          perfil: tipo_persona === "joven" ? perfil : null,
+          tipo_persona: tipoCalculado,                 // usamos el calculado sí o sí
+          perfil: tipoCalculado === "joven" ? perfil : null,
           celular: celular.trim(),
           facebook: facebook.trim(),
           correo: correo.trim(),
           es_nuevo,
           registrado_por: encargadoId,
-        },
-      ])
-      .select().single();
+        }])
+        .select()
+        .single();
 
       if (error) {
         console.error("Error al registrar:", error.message);
@@ -183,7 +182,7 @@ export default function RegistroForm() {
           nombres: "",
           apellidos: "",
           edad: 1,
-          tipo_persona: "pre-adolescente",
+          tipo_persona: getTipoPersonaFromEdad(1),
           perfil: "",
           celular: "",
           facebook: "",
@@ -213,7 +212,7 @@ export default function RegistroForm() {
         width: "95%",
         maxWidth: "500px",
         margin: "0 auto",
-        boxShadow: "0 6px 16px rgba(0, 0, 0, 0.1)",
+        boxShadow: "0 6px 16px rgba(0,0,0,0.1)",
       },
     });
   };
@@ -238,6 +237,7 @@ export default function RegistroForm() {
   return (
     <div className="registro-container">
       <button className="logout-button" onClick={handleLogout}>Cerrar sesión</button>
+
       <div className="registro-header">
         <img src={logo} alt="Logo" className="registro-logo" />
         {encargadoNombre && (
@@ -251,6 +251,8 @@ export default function RegistroForm() {
       <div className="registro-group">
         <label>Evento:</label>
         <Select
+          className="registro-select"
+          classNamePrefix="rs"
           options={eventOptions}
           value={eventSelected}
           onChange={(val) => setEventSelected(val)}
@@ -260,7 +262,6 @@ export default function RegistroForm() {
       </div>
 
       <form onSubmit={handleSubmit}>
-
         <div className="registro-group" style={{ justifySelf: "center" }}>
           <label>¿Es nuevo?</label>
           <div className="registro-radios">
@@ -271,8 +272,7 @@ export default function RegistroForm() {
                 value="true"
                 checked={formData.es_nuevo === true}
                 onChange={handleChange}
-              />
-              Sí
+              /> Sí
             </label>
             <label className="radio-option">
               <input
@@ -281,22 +281,22 @@ export default function RegistroForm() {
                 value="false"
                 checked={formData.es_nuevo === false}
                 onChange={handleChange}
-              />
-              No
+              /> No
             </label>
           </div>
         </div>
 
-        {formData.es_nuevo
-        ? null
-        : <Select
+        {formData.es_nuevo ? null : (
+          <Select
+            className="registro-select"
+            classNamePrefix="rs"
             options={asistOptions}
             value={asistSelected}
             onChange={(val) => setAsistSelected(val)}
             placeholder="Buscar asistente..."
             isClearable
           />
-        }
+        )}
 
         <div className="registro-group">
           <label>Nombres:</label>
@@ -322,52 +322,43 @@ export default function RegistroForm() {
 
         <div className="registro-group">
           <label>Edad:</label>
+          {/* TEXT + inputMode numeric para limpiar ceros a la izquierda */}
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
+            pattern="\d*"
             name="edad"
-            value={formData.edad}
+            value={formData.edad ? String(formData.edad) : ""} // sin '0' fantasma
             onChange={handleChange}
-            min={1}
+            maxLength={2}                   // máx 2 dígitos (99)
+            placeholder="0"
             required={asistSelected === null}
           />
         </div>
 
-        <div className="registro-group">
+        {/* Campo oculto (etapa) por si lo quieres mantener en el DOM */}
+        <div className="hidden-field">
           <label>¿En qué etapa estás?</label>
           <div className="registro-radios">
             <label>
-              <input
-                type="radio"
-                name="tipo_persona"
-                value="pre-adolescente"
-                checked={formData.tipo_persona === "pre-adolescente"}
-                onChange={handleChange}
-              />
+              <input type="radio" name="tipo_persona" value="pre-adolescente"
+                checked={formData.tipo_persona === "pre-adolescente"} readOnly />
               Pre-adolescente
             </label>
             <label>
-              <input
-                type="radio"
-                name="tipo_persona"
-                value="adolescente"
-                checked={formData.tipo_persona === "adolescente"}
-                onChange={handleChange}
-              />
+              <input type="radio" name="tipo_persona" value="adolescente"
+                checked={formData.tipo_persona === "adolescente"} readOnly />
               Adolescente
             </label>
             <label>
-              <input
-                type="radio"
-                name="tipo_persona"
-                value="joven"
-                checked={formData.tipo_persona === "joven"}
-                onChange={handleChange}
-              />
+              <input type="radio" name="tipo_persona" value="joven"
+                checked={formData.tipo_persona === "joven"} readOnly />
               Joven
             </label>
           </div>
         </div>
 
+        {/* Solo si es joven (18–25) pedimos perfil */}
         {formData.tipo_persona === "joven" && (
           <div className="registro-group">
             <label>¿Eres?</label>
@@ -379,8 +370,7 @@ export default function RegistroForm() {
                   value="universitario"
                   checked={formData.perfil === "universitario"}
                   onChange={handleChange}
-                />
-                Universitario
+                /> Universitario
               </label>
               <label className="radio-option">
                 <input
@@ -389,27 +379,40 @@ export default function RegistroForm() {
                   value="profesional"
                   checked={formData.perfil === "profesional"}
                   onChange={handleChange}
-                />
-                Profesional
+                /> Profesional
               </label>
             </div>
           </div>
         )}
 
+        {/* CELULAR con botón "No tiene" */}
         <div className="registro-group">
           <label>Celular:</label>
-          <input
-            type="tel"
-            name="celular"
-            value={formData.celular}
-            onChange={handleChange}
-            required={asistSelected === null}
-          />
+          <div className="input-with-button">
+            <input
+              type="tel"
+              name="celular"
+              value={formData.celular}
+              onChange={handleChange}
+              disabled={formData.celular === "No tiene"}
+              placeholder="9 dígitos"
+              inputMode="numeric"
+              maxLength={9}
+              required={asistSelected === null}
+            />
+            <button
+              type="button"
+              className="transparent-btn"
+              onClick={() => toggleNoTiene("celular")}
+            >
+              {formData.celular === "No tiene" ? "Cancelar" : "No tiene"}
+            </button>
+          </div>
         </div>
 
         <div className="registro-group">
           <label>Facebook:</label>
-          <div style={{ display: "flex", gap: "10px" }}>
+          <div className="input-with-button">
             <input
               type="text"
               name="facebook"
@@ -421,12 +424,7 @@ export default function RegistroForm() {
             <button
               type="button"
               className="transparent-btn"
-              onClick={() =>
-                setFormData((prev) => ({
-                  ...prev,
-                  facebook: prev.facebook === "No tiene" ? "" : "No tiene",
-                }))
-              }
+              onClick={() => toggleNoTiene("facebook")}
             >
               {formData.facebook === "No tiene" ? "Cancelar" : "No tiene"}
             </button>
@@ -435,7 +433,7 @@ export default function RegistroForm() {
 
         <div className="registro-group">
           <label>Correo electrónico:</label>
-          <div style={{ display: "flex", gap: "10px" }}>
+          <div className="input-with-button">
             <input
               type="email"
               name="correo"
@@ -447,21 +445,14 @@ export default function RegistroForm() {
             <button
               type="button"
               className="transparent-btn"
-              onClick={() =>
-                setFormData((prev) => ({
-                  ...prev,
-                  correo: prev.correo === "No tiene" ? "" : "No tiene",
-                }))
-              }
+              onClick={() => toggleNoTiene("correo")}
             >
               {formData.correo === "No tiene" ? "Cancelar" : "No tiene"}
             </button>
           </div>
         </div>
 
-        <button type="submit" className="registro-button">
-          Registrar
-        </button>
+        <button type="submit" className="registro-button">Registrar</button>
       </form>
     </div>
   );

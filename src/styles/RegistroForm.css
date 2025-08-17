@@ -24,6 +24,7 @@
   color: #f71515;
   font-weight: 500;
 }
+.hidden-field { display: none; }
 
 .logout-button {
   position: absolute;
@@ -90,6 +91,16 @@
 
 .radio-option:hover {
   color: #007bff;
+}
+/* Contenedor reutilizable para input + botón lateral */
+.input-with-button {
+  display: flex;
+  gap: 10px;
+}
+.input-with-button input { flex: 1; }
+.input-with-button .transparent-btn {
+  min-width: 86px;
+  font-weight: 700;
 }
 
 .registro-button {
