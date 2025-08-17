@@ -143,7 +143,7 @@ export default function RegistroForm() {
 
     const { nombres, apellidos, edad, tipo_persona, perfil, celular, facebook, correo, es_nuevo } = formData;
 
-    if (!es_nuevo) {
+    if (asistSelected) {
       registerAsistencia(-1);
       return;
     }
