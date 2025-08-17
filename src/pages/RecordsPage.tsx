@@ -84,12 +84,13 @@ const RecordsPage = () => {
   return (
       <div className="records-wrapper">
       <h1 className="titulo-lista">Lista de asistencia</h1>
+      <h2 className="subtitulo-eventos">Eventos:</h2>
 
         <div className="event-list">
           {eventos.map((ev) => {
             const isOpen = eventoSeleccionado === ev.id;
 
-            return (
+            return (     
               <div key={ev.id} style={{ marginBottom: "1rem" }}>
                 <article className="event-item" onClick={() => handleClick(ev.id)}>
                 <p className="event-name">

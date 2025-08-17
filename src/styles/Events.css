@@ -18,7 +18,14 @@
   align-items:center;
   font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
-
+.subtitulo-eventos {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0.5rem 0 1rem 0;
+  text-align: left;
+  padding-left: 1rem; /* mismo alineado que los eventos */
+  color: #333;
+}
 /* Caja blanca principal */
 .records-wrapper{
   width:100%;
